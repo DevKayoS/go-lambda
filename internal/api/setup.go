@@ -9,9 +9,9 @@ func SetupAPI() *gin.Engine {
 	r := gin.Default()
 
 	healthController := controllers.NewHealthController()
+	tokenController := controllers.NewTokenController()
 
-	apiHandler := NewAPI(healthController)
-
+	apiHandler := NewAPI(healthController, tokenController)
 	apiHandler.BindRoutes(r)
 
 	return r

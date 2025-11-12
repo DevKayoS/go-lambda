@@ -14,8 +14,8 @@ func NewHealthController() *HealthController {
 
 func (h *HealthController) Check(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
-		"status":   true,
-		"code":     http.StatusOK,
-		"messages": "API is running",
+		"status": true,
+		"code":   http.StatusOK,
+		"msg":    "API is running",
 	})
 }
