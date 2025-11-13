@@ -15,7 +15,7 @@ func NewTokenController() *TokenController {
 }
 
 func (tc *TokenController) Generate(ctx *gin.Context) {
-	var body models.GenerateRequest
+	var body models.GenerateTokenRequest
 
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
