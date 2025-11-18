@@ -10,6 +10,15 @@ API_NAME=minha-api-go
 STAGE_NAME=dev
 ACCOUNT_ID=$(shell aws sts get-caller-identity --query Account --output text)
 
+
+ifneq (,$(wildcard .env))
+    include .env
+endif
+
+# Exporta todas as variáveis
+export
+
+
 help:
 	@echo "Comandos disponiveis:"
 	@echo "  make build         - Compila o binario para Lambda"
@@ -55,8 +64,18 @@ create-lambda: zip create-role
 		--zip-file fileb://$(ZIP_FILE) \
 		--timeout 30 \
 		--memory-size 256 \
-		--region $(REGION)
+		--region $(REGION) \
+		--environment "Variables={DATABASE_URL=$(DATABASE_URL)}"
 	@echo "Lambda criada com sucesso!"
+
+
+update-env:
+	@echo "Atualizando variaveis de ambiente..."
+	aws lambda update-function-configuration \
+		--function-name $(FUNCTION_NAME) \
+		--environment "Variables={DATABASE_URL=$(DATABASE_URL)}" \
+		--region $(REGION)
+	@echo "Variaveis atualizadas!"
 
 create: create-lambda
 	@echo ""
@@ -168,5 +187,35 @@ install:
 	go mod download
 	go mod tidy
 	@echo "Dependencias instaladas!"
+
+migrate-up:
+	@echo "Running migrations with pgx driver..."
+	@if [ -z "$(DATABASE_URL)" ]; then \
+		echo "ERRO: DATABASE_URL não definida!"; \
+		exit 1; \
+	fi
+	tern migrate -m ./internal/store/migrations --conn-string $(DATABASE_URL)
+
+migrate-down:
+	@echo "Rolling back last migration..."
+	@tern migrate -m ./internal/store/migrations --conn-string $(DATABASE_URL) -d -1
+
+migrate-status:
+	@echo "Migration status..."
+	@tern status -m ./internal/store/migrations --conn-string $(DATABASE_URL)
+
+migrate-new:
+	@read -p "Migration name: " name; \
+	tern new -m ./internal/store/migrations $$name
+
+# SQLC
+sqlc-generate:
+	@echo "Generating code from SQL..."
+	@sqlc generate -f ./internal/store/sqlc.yaml
+
+test-db-connection:
+	@echo "Testing database connection..."
+	@psql "$(DATABASE_URL)" -c "SELECT version();" || (echo "Connection failed!"; exit 1)
+
 
 .DEFAULT_GOAL := help
