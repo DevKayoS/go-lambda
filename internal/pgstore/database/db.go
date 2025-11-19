@@ -29,7 +29,7 @@ func Init(ctx context.Context) error {
 	config.MaxConnIdleTime = 1 * time.Minute // Fecha conexões ociosas
 	config.HealthCheckPeriod = 1 * time.Minute
 
-	Pool, err := pgxpool.NewWithConfig(ctx, config)
+	Pool, err = pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		return fmt.Errorf("Erro ao realizar o pool: ", err.Error())
 	}
