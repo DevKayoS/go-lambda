@@ -74,3 +74,5 @@ func hashPassword(password string) (string, error) {
 
 	return string(hashedPassword), nil
 }
+
+// TODO: passar para ca a logica de login
