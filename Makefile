@@ -211,7 +211,7 @@ migrate-new:
 # SQLC
 sqlc-generate:
 	@echo "Generating code from SQL..."
-	@sqlc generate -f ./internal/store/sqlc.yaml
+	@sqlc generate -f ./internal/pgstore/sqlc.yaml
 
 test-db-connection:
 	@echo "Testing database connection..."
