@@ -7,9 +7,9 @@ import (
 	"log/slog"
 
 	pgstore "github.com/DevKayoS/go-lambda/internal/pgstore"
+	"github.com/DevKayoS/go-lambda/internal/utils"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type userRepository interface {
@@ -38,7 +38,6 @@ func (u *UserService) CreateUser(ctx context.Context, body pgstore.InsertUserPar
 	}
 
 	if !errors.Is(err, pgx.ErrNoRows) {
-		// Erro inesperado
 		slog.Error("Erro ao buscar usuário por email: ", err)
 		return fmt.Errorf("erro ao validar email")
 	}
@@ -51,7 +50,7 @@ func (u *UserService) CreateUser(ctx context.Context, body pgstore.InsertUserPar
 		return fmt.Errorf("A senha não possui um tamanho valido")
 	}
 
-	hashedPassword, err := hashPassword(body.Password)
+	hashedPassword, err := utils.HashPassword(body.Password)
 	if err != nil {
 		return fmt.Errorf("Erro inesperado!")
 	}
@@ -65,14 +64,3 @@ func (u *UserService) CreateUser(ctx context.Context, body pgstore.InsertUserPar
 
 	return nil
 }
-
-func hashPassword(password string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
-	}
-
-	return string(hashedPassword), nil
-}
-
-// TODO: passar para ca a logica de login

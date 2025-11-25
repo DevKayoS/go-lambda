@@ -1,32 +1,51 @@
 package token
 
 import (
-	"errors"
+	"context"
+	"fmt"
 	"time"
 
 	"github.com/DevKayoS/go-lambda/internal/models"
+	"github.com/DevKayoS/go-lambda/internal/pgstore"
+	"github.com/DevKayoS/go-lambda/internal/utils"
 	"github.com/golang-jwt/jwt"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TODO: ajustar esse metodo para ficar igual aos outros para ele ter a dependencia do userRepository
-func Generate(gr models.GenerateTokenRequest) (string, error) {
-	if len(gr.Password) < 3 {
-		return "", errors.New("password is too short")
+type userRepository interface {
+	GetUserByEmail(ctx context.Context, email string) (pgstore.User, error)
+}
+
+type TokenService struct {
+	userRepository userRepository
+}
+
+func NewTokenService(pool *pgxpool.Pool) *TokenService {
+	return &TokenService{
+		userRepository: pgstore.New(pool),
+	}
+}
+
+func (ts *TokenService) Auth(ctx context.Context, gr models.GenerateTokenRequest) (string, error) {
+	user, err := ts.userRepository.GetUserByEmail(ctx, gr.Email)
+	if err != nil {
+		return "", fmt.Errorf("not authorized")
 	}
 
-	if len(gr.Password) > 72 {
-		return "", errors.New("password is too long")
+	if !utils.CheckPasswordHash(gr.Password, user.Password) {
+		return "", fmt.Errorf("not authorized")
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user": gr.Email,
-		"pass": gr.Password,
-		"nbf":  time.Date(2015, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
+		"email": user.Email,
+		"name":  user.Name,
+		"iat":   time.Now().Unix(),
+		"exp":   time.Now().Add(24 * time.Hour).Unix(),
 	})
 
 	tokenString, err := token.SignedString(models.SecretKey)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("not authorized")
 	}
 
 	return tokenString, nil
