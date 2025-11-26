@@ -29,16 +29,20 @@ func NewAPI(
 }
 
 func (a *API) BindRoutes(r *gin.Engine) {
+	r.Use(middleware.ErrorHandler())
+
 	api := r.Group("/api/v1")
+
+	apiPublic := api.Group("/")
 	{
-		api.Use(middleware.ErrorHandler())
+		routes.SetupHealthRoutes(apiPublic, a.HealthController)
+		routes.SetupTokenRoutes(apiPublic, a.TokenController)
+	}
 
-		routes.SetupHealthRoutes(api, a.HealthController)
-		routes.SetupTokenRoutes(api, a.TokenController)
-		routes.SetupUserRoutes(api, a.UserController)
-		// protected routes
-		api.Use(middleware.AuthMiddleware())
-		routes.SetupTransactionRoutes(api, a.TransactionController)
-
+	apiProtected := api.Group("/")
+	apiProtected.Use(middleware.AuthMiddleware())
+	{
+		routes.SetupUserRoutes(apiPublic, a.UserController)
+		routes.SetupTransactionRoutes(apiProtected, a.TransactionController)
 	}
 }
