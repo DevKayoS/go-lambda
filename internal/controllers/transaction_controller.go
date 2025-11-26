@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/DevKayoS/go-lambda/internal/errors"
 	"github.com/DevKayoS/go-lambda/internal/models"
 	"github.com/gin-gonic/gin"
 )
@@ -23,23 +24,13 @@ func (tr *TransactionController) Create(ctx *gin.Context) {
 	var body models.TransactionRequest
 
 	if err := ctx.ShouldBindJSON(&body); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"status": false,
-			"code":   http.StatusBadRequest,
-			"msg":    "Invalid request body!",
-		})
-
+		ctx.Error(errors.BadRequest("Invalid request body!"))
 		return
 	}
 
 	transaction, err := tr.service.Create(body)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"status": false,
-			"code":   http.StatusBadRequest,
-			"msg":    err.Error(),
-		})
-
+		ctx.Error(err)
 		return
 	}
 

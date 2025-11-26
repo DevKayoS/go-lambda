@@ -3,9 +3,9 @@ package user
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 
+	errorsHandler "github.com/DevKayoS/go-lambda/internal/errors"
 	pgstore "github.com/DevKayoS/go-lambda/internal/pgstore"
 	"github.com/DevKayoS/go-lambda/internal/utils"
 	"github.com/jackc/pgx/v5"
@@ -29,37 +29,37 @@ func NewUserService(pool *pgxpool.Pool) *UserService {
 
 func (u *UserService) CreateUser(ctx context.Context, body pgstore.InsertUserParams) error {
 	if body.Email == "" {
-		return fmt.Errorf("O campo e-mail é obrigatório.")
+		return errorsHandler.BadRequest("O campo e-mail é obrigatório.")
 	}
 
 	_, err := u.userRepository.GetUserByEmail(ctx, body.Email)
 	if err == nil {
-		return fmt.Errorf("email já está sendo utilizado")
+		return errorsHandler.BadRequest("email já está sendo utilizado")
 	}
 
 	if !errors.Is(err, pgx.ErrNoRows) {
 		slog.Error("Erro ao buscar usuário por email: ", err)
-		return fmt.Errorf("erro ao validar email")
+		return errorsHandler.BadRequest("erro ao validar email")
 	}
 
 	if body.Password == "" {
-		return fmt.Errorf("A senha não pode estar vazia")
+		return errorsHandler.BadRequest("A senha não pode estar vazia")
 	}
 
 	if len(body.Password) < 6 {
-		return fmt.Errorf("A senha não possui um tamanho valido")
+		return errorsHandler.BadRequest("A senha não possui um tamanho valido")
 	}
 
 	hashedPassword, err := utils.HashPassword(body.Password)
 	if err != nil {
-		return fmt.Errorf("Erro inesperado!")
+		return errorsHandler.Internal("Erro inesperado!", err)
 	}
 
 	body.Password = hashedPassword
 
 	_, err = u.userRepository.InsertUser(ctx, body)
 	if err != nil {
-		return fmt.Errorf("Algo deu errado ao criar o usuario: ", err)
+		return errorsHandler.Internal("Algo deu errado ao criar o usuario", err)
 	}
 
 	return nil

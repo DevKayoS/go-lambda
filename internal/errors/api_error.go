@@ -1,4 +1,4 @@
-package error
+package errors
 
 type ApiError struct {
 	Code       string `json:"code"`

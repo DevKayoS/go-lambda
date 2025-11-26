@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/DevKayoS/go-lambda/internal/errors"
 	"github.com/DevKayoS/go-lambda/internal/pgstore"
 	"github.com/gin-gonic/gin"
 )
@@ -31,12 +32,7 @@ func (uc *UserController) CreateUser(ctx *gin.Context) {
 	var req CreateUserRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"status": false,
-			"code":   http.StatusBadRequest,
-			"msg":    "Invalid request body!",
-		})
-
+		ctx.Error(errors.BadRequest("Invalid request body!"))
 		return
 	}
 
@@ -49,13 +45,7 @@ func (uc *UserController) CreateUser(ctx *gin.Context) {
 	err := uc.service.CreateUser(ctx, userParams)
 	if err != nil {
 		fmt.Printf("Error creating user: %v\n", err)
-
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"status": false,
-			"code":   http.StatusBadRequest,
-			"msg":    err.Error(),
-		})
-
+		ctx.Error(err)
 		return
 	}
 

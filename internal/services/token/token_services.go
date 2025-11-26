@@ -2,9 +2,9 @@ package token
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/DevKayoS/go-lambda/internal/errors"
 	"github.com/DevKayoS/go-lambda/internal/models"
 	"github.com/DevKayoS/go-lambda/internal/pgstore"
 	"github.com/DevKayoS/go-lambda/internal/utils"
@@ -29,11 +29,11 @@ func NewTokenService(pool *pgxpool.Pool) *TokenService {
 func (ts *TokenService) Auth(ctx context.Context, gr models.GenerateTokenRequest) (string, error) {
 	user, err := ts.userRepository.GetUserByEmail(ctx, gr.Email)
 	if err != nil {
-		return "", fmt.Errorf("not authorized")
+		return "", errors.Unathorized("not authorized")
 	}
 
 	if !utils.CheckPasswordHash(gr.Password, user.Password) {
-		return "", fmt.Errorf("not authorized")
+		return "", errors.Unathorized("not authorized")
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -45,7 +45,7 @@ func (ts *TokenService) Auth(ctx context.Context, gr models.GenerateTokenRequest
 
 	tokenString, err := token.SignedString(models.SecretKey)
 	if err != nil {
-		return "", fmt.Errorf("not authorized")
+		return "", errors.Unathorized("not authorized")
 	}
 
 	return tokenString, nil
