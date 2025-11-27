@@ -64,3 +64,5 @@ func (u *UserService) CreateUser(ctx context.Context, body pgstore.InsertUserPar
 
 	return nil
 }
+
+// TODO: fazer a rota /me que traz os dados do usuario logado
