@@ -42,7 +42,7 @@ func (a *API) BindRoutes(r *gin.Engine) {
 	apiProtected := api.Group("/")
 	apiProtected.Use(middleware.AuthMiddleware())
 	{
-		routes.SetupUserRoutes(apiPublic, a.UserController)
+		routes.SetupUserRoutes(apiProtected, a.UserController)
 		routes.SetupTransactionRoutes(apiProtected, a.TransactionController)
 	}
 }

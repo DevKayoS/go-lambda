@@ -14,6 +14,8 @@ import (
 
 type userRepository interface {
 	GetUserByEmail(ctx context.Context, email string) (pgstore.User, error)
+	GetUserWithPermissions(ctx context.Context, email string) (pgstore.GetUserWithPermissionsRow, error)
+	GetUserPermissions(ctx context.Context, email string) ([]string, error)
 }
 
 type TokenService struct {
@@ -27,7 +29,7 @@ func NewTokenService(pool *pgxpool.Pool) *TokenService {
 }
 
 func (ts *TokenService) Auth(ctx context.Context, gr models.GenerateTokenRequest) (string, error) {
-	user, err := ts.userRepository.GetUserByEmail(ctx, gr.Email)
+	user, err := ts.userRepository.GetUserWithPermissions(ctx, gr.Email)
 	if err != nil {
 		return "", errors.Unathorized("not authorized")
 	}
@@ -36,11 +38,19 @@ func (ts *TokenService) Auth(ctx context.Context, gr models.GenerateTokenRequest
 		return "", errors.Unathorized("not authorized")
 	}
 
+	permissions, err := ts.userRepository.GetUserPermissions(ctx, gr.Email)
+	if err != nil {
+		return "", errors.Internal("something went wrong", err)
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"email": user.Email,
-		"name":  user.Name,
-		"iat":   time.Now().Unix(),
-		"exp":   time.Now().Add(24 * time.Hour).Unix(),
+		"user_id":     user.ID,
+		"email":       user.Email,
+		"name":        user.Name,
+		"role":        user.RoleName,
+		"permissions": permissions,
+		"iat":         time.Now().Unix(),
+		"exp":         time.Now().Add(24 * time.Hour).Unix(),
 	})
 
 	tokenString, err := token.SignedString(models.SecretKey)

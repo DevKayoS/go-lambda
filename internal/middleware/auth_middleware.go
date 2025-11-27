@@ -1,9 +1,10 @@
 package middleware
 
 import (
-	"net/http"
+	"slices"
 	"strings"
 
+	"github.com/DevKayoS/go-lambda/internal/errors"
 	"github.com/DevKayoS/go-lambda/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -14,23 +15,14 @@ func AuthMiddleware() gin.HandlerFunc {
 		authHeader := ctx.GetHeader("Authorization")
 
 		if authHeader == "" {
-			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"status": false,
-				"code":   http.StatusUnauthorized,
-				"msg":    "authorization header required",
-			})
+			ctx.Error(errors.Unathorized("authorization header required"))
 			ctx.Abort()
 			return
 		}
 
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"status": false,
-				"code":   http.StatusUnauthorized,
-				"msg":    "invalid authorization format",
-			})
-
+			ctx.Error(errors.Unathorized("invalid authorization format"))
 			ctx.Abort()
 			return
 		}
@@ -45,11 +37,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return models.SecretKey, nil
 		})
 		if err != nil {
-			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"status": false,
-				"code":   http.StatusUnauthorized,
-				"msg":    "access denied",
-			})
+			ctx.Error(errors.Unathorized("access denied"))
 			ctx.Abort()
 			return
 		}
@@ -57,6 +45,85 @@ func AuthMiddleware() gin.HandlerFunc {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			ctx.Set("user", claims["user"])
 			ctx.Set("claims", claims)
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			ctx.Set("user_id", claims["user_id"])
+			ctx.Set("email", claims["email"])
+			ctx.Set("role", claims["role"])
+			ctx.Set("permissions", claims["permissions"])
+			ctx.Set("claims", claims)
+		}
+
+		ctx.Next()
+	}
+}
+
+func RequireRole(allowedRoles ...string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		role, exists := ctx.Get("role")
+		if !exists {
+			ctx.Error(errors.Forbidden("role not found"))
+			ctx.Abort()
+			return
+		}
+
+		userRole, ok := role.(string)
+		if !ok {
+			ctx.Error(errors.Forbidden("invalid role format"))
+			ctx.Abort()
+			return
+		}
+
+		if slices.Contains(allowedRoles, userRole) {
+			ctx.Next()
+			return
+		}
+
+		ctx.Error(errors.Forbidden("insufficient permissions"))
+		ctx.Abort()
+	}
+}
+
+func RequerePermissions(requiredPermissions ...string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		permissionsInterface, exists := ctx.Get("permissions")
+		if !exists {
+			ctx.Error(errors.Forbidden("permission not found"))
+			ctx.Abort()
+			return
+		}
+
+		var userPermissions []string
+		switch v := permissionsInterface.(type) {
+		case []interface{}:
+			for _, perm := range v {
+				if str, ok := perm.(string); ok {
+					userPermissions = append(userPermissions, str)
+				}
+			}
+		case []string:
+			userPermissions = v
+		default:
+			ctx.Error(errors.Forbidden("invalid permissions format"))
+			ctx.Abort()
+			return
+		}
+
+		for _, required := range requiredPermissions {
+			hasPermission := false
+			for _, userPerm := range userPermissions {
+				if userPerm == required || userPerm == "manage:all" {
+					hasPermission = true
+					break
+				}
+			}
+
+			if !hasPermission {
+				ctx.Error(errors.Forbidden("insufficient permissions"))
+				ctx.Abort()
+				return
+			}
 		}
 
 		ctx.Next()

@@ -30,6 +30,7 @@ help:
 	@echo "  make test          - Roda os testes"
 	@echo "  make clean         - Remove arquivos gerados"
 	@echo "  make delete-all    - Remove Lambda e API Gateway"
+	@echo "  make migrate-new   - Cria uma nova migration"
 
 build:
 	@echo "Building for Lambda..."
@@ -194,19 +195,19 @@ migrate-up:
 		echo "ERRO: DATABASE_URL não definida!"; \
 		exit 1; \
 	fi
-	tern migrate -m ./internal/store/migrations --conn-string $(DATABASE_URL)
+	tern migrate -m ./internal/pgstore/migrations --conn-string $(DATABASE_URL)
 
 migrate-down:
 	@echo "Rolling back last migration..."
-	@tern migrate -m ./internal/store/migrations --conn-string $(DATABASE_URL) -d -1
+	@tern migrate -m ./internal/pgstore/migrations --conn-string $(DATABASE_URL) -d -1
 
 migrate-status:
 	@echo "Migration status..."
-	@tern status -m ./internal/store/migrations --conn-string $(DATABASE_URL)
+	@tern status -m ./internal/pgstore/migrations --conn-string $(DATABASE_URL)
 
 migrate-new:
 	@read -p "Migration name: " name; \
-	tern new -m ./internal/store/migrations $$name
+	tern new -m ./internal/pgstore/migrations $$name
 
 # SQLC
 sqlc-generate:

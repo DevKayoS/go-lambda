@@ -64,6 +64,3 @@ func (u *UserService) CreateUser(ctx context.Context, body pgstore.InsertUserPar
 
 	return nil
 }
-
-// TODO: implementar rota que pega os dados de quem ta logado
-func (u *UserService) GetUserByToken(ctx context.Context) (any, error) {}
