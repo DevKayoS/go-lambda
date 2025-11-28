@@ -7,6 +7,8 @@ package pgstore
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getUserByEmail = `-- name: GetUserByEmail :one
@@ -25,6 +27,36 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.RoleID,
+	)
+	return i, err
+}
+
+const getUserWithPermissionsById = `-- name: GetUserWithPermissionsById :one
+SELECT 
+    u.id,
+    u.name,
+    u.email,
+    r.name as role_name
+FROM users u
+LEFT JOIN roles r ON u.role_id = r.id
+WHERE u.id = $1
+`
+
+type GetUserWithPermissionsByIdRow struct {
+	ID       int64       `json:"id"`
+	Name     string      `json:"name"`
+	Email    string      `json:"email"`
+	RoleName pgtype.Text `json:"role_name"`
+}
+
+func (q *Queries) GetUserWithPermissionsById(ctx context.Context, id int64) (GetUserWithPermissionsByIdRow, error) {
+	row := q.db.QueryRow(ctx, getUserWithPermissionsById, id)
+	var i GetUserWithPermissionsByIdRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.RoleName,
 	)
 	return i, err
 }
