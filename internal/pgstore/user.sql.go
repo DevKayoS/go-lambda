@@ -79,3 +79,38 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (int64, 
 	err := row.Scan(&id)
 	return id, err
 }
+
+const listUser = `-- name: ListUser :many
+SELECT 
+    u.name,
+    u.email,
+    r.name as role_name
+FROM users u
+LEFT JOIN roles r on u.role_id = r.id
+`
+
+type ListUserRow struct {
+	Name     string      `json:"name"`
+	Email    string      `json:"email"`
+	RoleName pgtype.Text `json:"role_name"`
+}
+
+func (q *Queries) ListUser(ctx context.Context) ([]ListUserRow, error) {
+	rows, err := q.db.Query(ctx, listUser)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUserRow
+	for rows.Next() {
+		var i ListUserRow
+		if err := rows.Scan(&i.Name, &i.Email, &i.RoleName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

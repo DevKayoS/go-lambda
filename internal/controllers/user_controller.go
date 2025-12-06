@@ -13,6 +13,7 @@ import (
 type UserService interface {
 	CreateUser(ctx context.Context, body pgstore.InsertUserParams) error
 	GetMe(ctx context.Context, userID int64) (pgstore.GetUserWithPermissionsByIdRow, error)
+	List(ctx context.Context) ([]pgstore.ListUserRow, error)
 }
 
 type UserController struct {
@@ -84,5 +85,21 @@ func (uc *UserController) GetMe(ctx *gin.Context) {
 		"code":   http.StatusOK,
 		"msg":    "Usuario encontrado com sucesso!",
 		"data":   user,
+	})
+}
+
+func (uc *UserController) List(ctx *gin.Context) {
+	users, err := uc.service.List(ctx)
+	if err != nil {
+		ctx.Error(err)
+		ctx.Abort()
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status": true,
+		"code":   http.StatusOK,
+		"msg":    "Usuarios listado com sucesso",
+		"data":   users,
 	})
 }

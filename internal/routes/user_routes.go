@@ -11,5 +11,6 @@ func SetupUserRoutes(rg *gin.RouterGroup, uc *controllers.UserController) {
 	{
 		user.POST("", middleware.RequireRole("admin"), uc.CreateUser)
 		user.GET("/me", uc.GetMe)
+		user.GET("/list", middleware.RequireRole("admin"), uc.List)
 	}
 }

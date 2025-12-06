@@ -16,6 +16,7 @@ type userRepository interface {
 	InsertUser(ctx context.Context, arg pgstore.InsertUserParams) (int64, error)
 	GetUserByEmail(ctx context.Context, email string) (pgstore.User, error)
 	GetUserWithPermissionsById(ctx context.Context, id int64) (pgstore.GetUserWithPermissionsByIdRow, error)
+	ListUser(ctx context.Context) ([]pgstore.ListUserRow, error)
 }
 
 type UserService struct {
@@ -67,11 +68,23 @@ func (u *UserService) CreateUser(ctx context.Context, body pgstore.InsertUserPar
 }
 
 func (u *UserService) GetMe(ctx context.Context, userID int64) (pgstore.GetUserWithPermissionsByIdRow, error) {
-	slog.Info("que usuario ta vindo", userID)
 	user, err := u.userRepository.GetUserWithPermissionsById(ctx, userID)
 	if err != nil {
 		return pgstore.GetUserWithPermissionsByIdRow{}, errorsHandler.BadRequest("user not found")
 	}
 
 	return user, nil
+}
+
+func (u *UserService) List(ctx context.Context) ([]pgstore.ListUserRow, error) {
+	users, err := u.userRepository.ListUser(ctx)
+	if err != nil {
+		return []pgstore.ListUserRow{}, errorsHandler.BadRequest("users not found")
+	}
+
+	if len(users) == 0 {
+		return []pgstore.ListUserRow{}, errorsHandler.NotFound("users not found")
+	}
+
+	return users, nil
 }
