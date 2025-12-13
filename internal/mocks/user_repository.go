@@ -133,8 +133,7 @@ func (_m *UserRepository) ListUser(ctx context.Context) ([]pgstore.ListUserRow, 
 func NewUserRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-},
-) *UserRepository {
+}) *UserRepository {
 	mock := &UserRepository{}
 	mock.Mock.Test(t)
 

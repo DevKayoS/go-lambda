@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/DevKayoS/go-lambda/internal/mocks"
 	"github.com/DevKayoS/go-lambda/internal/pgstore"
-	"github.com/DevKayoS/go-lambda/internal/services/user/mocks"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
