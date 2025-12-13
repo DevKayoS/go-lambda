@@ -12,14 +12,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type userRepository interface {
+type UserRepository interface {
 	GetUserByEmail(ctx context.Context, email string) (pgstore.User, error)
 	GetUserWithPermissions(ctx context.Context, email string) (pgstore.GetUserWithPermissionsRow, error)
 	GetUserPermissions(ctx context.Context, email string) ([]string, error)
 }
 
 type TokenService struct {
-	userRepository userRepository
+	userRepository UserRepository
 }
 
 func NewTokenService(pool *pgxpool.Pool) *TokenService {

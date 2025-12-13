@@ -195,7 +195,7 @@ migrate-up:
 		echo "ERRO: DATABASE_URL não definida!"; \
 		exit 1; \
 	fi
-	tern migrate -m ./internal/pgstore/migrations --conn-string $(DATABASE_URL)
+	tern migrate -m ./internal/store/migrations --conn-string $(DATABASE_URL)
 
 migrate-down:
 	@echo "Rolling back last migration..."
@@ -218,5 +218,9 @@ test-db-connection:
 	@echo "Testing database connection..."
 	@psql "$(DATABASE_URL)" -c "SELECT version();" || (echo "Connection failed!"; exit 1)
 
+
+create-mock:
+	@echo "Criando pasta de mocks"
+	@mockery --all --output=./internal/mocks --case=underscore
 
 .DEFAULT_GOAL := help

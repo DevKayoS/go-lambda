@@ -3,7 +3,6 @@ package user
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	errorsHandler "github.com/DevKayoS/go-lambda/internal/errors"
 	pgstore "github.com/DevKayoS/go-lambda/internal/pgstore"
@@ -12,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type userRepository interface {
+type UserRepository interface {
 	InsertUser(ctx context.Context, arg pgstore.InsertUserParams) (int64, error)
 	GetUserByEmail(ctx context.Context, email string) (pgstore.User, error)
 	GetUserWithPermissionsById(ctx context.Context, id int64) (pgstore.GetUserWithPermissionsByIdRow, error)
@@ -20,7 +19,7 @@ type userRepository interface {
 }
 
 type UserService struct {
-	userRepository userRepository
+	userRepository UserRepository
 }
 
 func NewUserService(pool *pgxpool.Pool) *UserService {
@@ -40,7 +39,6 @@ func (u *UserService) CreateUser(ctx context.Context, body pgstore.InsertUserPar
 	}
 
 	if !errors.Is(err, pgx.ErrNoRows) {
-		slog.Error("Erro ao buscar usuário por email: ", err)
 		return errorsHandler.BadRequest("erro ao validar email")
 	}
 
